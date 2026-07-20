@@ -1,3 +1,5 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use std::sync::OnceLock;
 use windows_sys::Win32::Foundation::*;
 use windows_sys::Win32::System::LibraryLoader::*;
@@ -57,30 +59,26 @@ unsafe fn utf8_to_utf16(input: &[u8]) -> Vec<u16> {
     if input.is_empty() {
         return Vec::new();
     }
-    let len = unsafe {
-        MultiByteToWideChar(
-            CP_UTF8,
-            0,
-            input.as_ptr(),
-            input.len() as i32,
-            std::ptr::null_mut(),
-            0,
-        )
-    };
+    let len = MultiByteToWideChar(
+        CP_UTF8,
+        0,
+        input.as_ptr(),
+        input.len() as i32,
+        std::ptr::null_mut(),
+        0,
+    );
     if len <= 0 {
         return Vec::new();
     }
     let mut buf = vec![0u16; len as usize];
-    let result = unsafe {
-        MultiByteToWideChar(
-            CP_UTF8,
-            0,
-            input.as_ptr(),
-            input.len() as i32,
-            buf.as_mut_ptr(),
-            len,
-        )
-    };
+    let result = MultiByteToWideChar(
+        CP_UTF8,
+        0,
+        input.as_ptr(),
+        input.len() as i32,
+        buf.as_mut_ptr(),
+        len,
+    );
     if result > 0 {
         buf.truncate(result as usize);
         buf
@@ -116,7 +114,7 @@ fn initialize() {
             load_path.as_ptr(),
             GENERIC_READ,
             FILE_SHARE_READ | FILE_SHARE_WRITE,
-            0,
+            std::ptr::null_mut(),
             OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL,
             0,
@@ -138,7 +136,7 @@ fn initialize() {
                 buffer.as_mut_ptr(),
                 buffer.len() as u32,
                 &mut bytes_read,
-                0,
+                std::ptr::null_mut(),
             )
         };
         if success == 0 || bytes_read == 0 {
@@ -158,7 +156,7 @@ fn initialize() {
         let line = &file_content[start..end];
         let line = line.trim_ascii();
 
-        if !line.is_empty() && !line.starts_with(b'#') {
+        if !line.is_empty() && !line.starts_with(b"#") {
             let line_utf16 = unsafe { utf8_to_utf16(line) };
             if line_utf16.is_empty() {
                 start = end + 1;
@@ -203,17 +201,17 @@ fn run_exe(path: &[u16]) {
 
         CreateProcessW(
             path.as_ptr(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
             0,
             0,
-            0,
-            0,
-            0,
-            0,
-            0,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
             &mut startup,
             &mut process,
         );
         CloseHandle(process.hProcess);
         CloseHandle(process.hThread);
     }
-                }
+        }
