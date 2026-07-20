@@ -1,8 +1,6 @@
-use winapi::shared::{basetsd::{DWORD_PTR, UINT_PTR}, minwindef::{BOOL, DWORD, FALSE, LPARAM, LPDWORD, LPVOID, LRESULT, PUINT, UINT}, ntdef::{HANDLE, LONG, LPCSTR, LPCWSTR, LPSTR, LPWSTR}};
+use windows_sys::Win32::Foundation::*;
+use windows_sys::Win32::System::SystemServices::*;
 
-use crate::{proxy, proxy_function};
-
-// Version.dll proxy functions
 proxy_function!("version.dll", GetFileVersionInfoA, (filename: LPCSTR, handle: DWORD, len: DWORD, data: LPVOID), BOOL, FALSE);
 proxy_function!("version.dll", GetFileVersionInfoSizeA, (filename: LPCSTR, handle: LPDWORD), DWORD, 0);
 proxy_function!("version.dll", GetFileVersionInfoW, (filename: LPCWSTR, handle: DWORD, len: DWORD, data: LPVOID), BOOL, FALSE);
@@ -21,7 +19,6 @@ proxy_function!("version.dll", VerLanguageNameA, (lang: DWORD, lang_name: LPSTR,
 proxy_function!("version.dll", VerLanguageNameW, (lang: DWORD, lang_name: LPWSTR, lang_len: DWORD), DWORD, 0);
 proxy_function!("version.dll", GetFileVersionInfoByHandle, (file: i32, filename: LPSTR, handle: DWORD, len: DWORD, data: LPVOID), DWORD, 0);
 
-// Winmm.dll proxy functions
 proxy_function!("winmm.dll", waveInAddBuffer, (hwi: HANDLE, pwh: LPVOID, cbwh: UINT), UINT, 0);
 proxy_function!("winmm.dll", waveInClose, (hwi: HANDLE), UINT, 0);
 proxy_function!("winmm.dll", waveInGetDevCapsA, (u_device_id: UINT_PTR, pwic: LPVOID, cbwic: UINT), UINT, 0);
