@@ -1,3 +1,4 @@
+use crate::proxy::proxy_function;
 use windows_sys::Win32::Foundation::*;
 use windows_sys::Win32::System::SystemServices::*;
 
