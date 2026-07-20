@@ -57,26 +57,30 @@ unsafe fn utf8_to_utf16(input: &[u8]) -> Vec<u16> {
     if input.is_empty() {
         return Vec::new();
     }
-    let len = MultiByteToWideChar(
-        CP_UTF8,
-        0,
-        input.as_ptr(),
-        input.len() as i32,
-        std::ptr::null_mut(),
-        0,
-    );
+    let len = unsafe {
+        MultiByteToWideChar(
+            CP_UTF8,
+            0,
+            input.as_ptr(),
+            input.len() as i32,
+            std::ptr::null_mut(),
+            0,
+        )
+    };
     if len <= 0 {
         return Vec::new();
     }
     let mut buf = vec![0u16; len as usize];
-    let result = MultiByteToWideChar(
-        CP_UTF8,
-        0,
-        input.as_ptr(),
-        input.len() as i32,
-        buf.as_mut_ptr(),
-        len,
-    );
+    let result = unsafe {
+        MultiByteToWideChar(
+            CP_UTF8,
+            0,
+            input.as_ptr(),
+            input.len() as i32,
+            buf.as_mut_ptr(),
+            len,
+        )
+    };
     if result > 0 {
         buf.truncate(result as usize);
         buf
@@ -212,4 +216,4 @@ fn run_exe(path: &[u16]) {
         CloseHandle(process.hProcess);
         CloseHandle(process.hThread);
     }
-                  }
+                }
