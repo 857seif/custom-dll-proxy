@@ -1,206 +1,198 @@
-#![allow(unsafe_op_in_unsafe_fn)]
-
+use std::error::Error;
+use std::ffi::OsString;
+use std::fs::File;
+use std::io::{BufRead, BufReader, Write};
+use std::os::windows::ffi::{OsStrExt, OsStringExt};
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
-use std::ffi::c_void;
-use windows_sys::Win32::Foundation::*;
-use windows_sys::Win32::System::LibraryLoader::*;
-use windows_sys::Win32::System::SystemServices::*;
-use windows_sys::Win32::System::Threading::*;
-use windows_sys::Win32::Storage::FileSystem::*;
-use windows_sys::Win32::Globalization::*;
+use std::time::SystemTime;
+
+use winapi::shared::minwindef::{BOOL, DWORD, HMODULE, LPVOID, TRUE, FALSE};
+use winapi::um::libloaderapi::{GetModuleFileNameW, LoadLibraryW};
+use winapi::um::winnt::{DLL_PROCESS_ATTACH, DLL_PROCESS_DETACH};
+use winapi::um::processthreadsapi::{CreateProcessW, PROCESS_INFORMATION, STARTUPINFOW};
+use winapi::um::handleapi::CloseHandle;
+use winapi::um::errhandlingapi::GetLastError;
 
 pub mod proxy;
 mod exports;
 
-static DLL_DIR: OnceLock<Vec<u16>> = OnceLock::new();
+static DLL_PATH: OnceLock<PathBuf> = OnceLock::new();
+
+fn log_message(msg: &str) {
+    let _ = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("proxy_debug.log")
+        .and_then(|mut f| {
+            let timestamp = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0);
+            f.write_all(format!("[{}] {}\n", timestamp, msg).as_bytes())
+        });
+}
 
 #[unsafe(no_mangle)]
-extern "system" fn DllMain(module: HMODULE, reason: u32, _reserved: *mut ()) -> BOOL {
-    match reason {
+#[allow(non_snake_case)]
+unsafe extern "system" fn DllMain(
+    module: HMODULE,
+    call_reason: DWORD,
+    _reserved: LPVOID,
+) -> BOOL {
+    match call_reason {
         DLL_PROCESS_ATTACH => {
-            let mut path = [0u16; 1024];
-            let len = unsafe { GetModuleFileNameW(module, path.as_mut_ptr(), path.len() as u32) };
-            if len > 0 {
-                let mut end = len as usize;
-                while end > 0 && path[end - 1] != '\\' as u16 {
-                    end -= 1;
+            log_message("DLL_PROCESS_ATTACH started");
+
+            let dll_path = {
+                let mut buffer = [0u16; 1024];
+                let len = GetModuleFileNameW(module, buffer.as_mut_ptr(), buffer.len() as u32);
+                if len == 0 {
+                    log_message("Failed to get module filename");
+                    return FALSE;
                 }
-                if end > 0 {
-                    let dir = &path[..end];
-                    DLL_DIR.set(dir.to_vec()).ok();
+                let path = OsString::from_wide(&buffer[..len as usize]);
+                let path = PathBuf::from(path);
+                match path.parent() {
+                    Some(parent) => parent.to_owned(),
+                    None => {
+                        log_message("Failed to get parent directory");
+                        return FALSE;
+                    }
                 }
+            };
+
+            log_message(&format!("DLL_PATH set to: {:?}", dll_path));
+
+            if DLL_PATH.set(dll_path).is_err() {
+                log_message("Failed to set DLL_PATH (already set)");
+                return FALSE;
             }
-            unsafe {
-                CreateThread(
-                    std::ptr::null_mut(),
-                    0,
-                    Some(init_thread),
-                    std::ptr::null_mut(),
-                    0,
-                    std::ptr::null_mut(),
-                );
-            }
-            1
+
+            initialize();
+
+            TRUE
         }
         DLL_PROCESS_DETACH => {
+            log_message("DLL_PROCESS_DETACH");
             unsafe { proxy::cleanup_proxied_dll() };
-            1
+            TRUE
         }
-        _ => 1,
+        _ => TRUE,
     }
-}
-
-unsafe extern "system" fn init_thread(_param: *mut c_void) -> u32 {
-    initialize();
-    0
-}
-
-unsafe fn utf8_to_utf16(input: &[u8]) -> Vec<u16> {
-    if input.is_empty() {
-        return Vec::new();
-    }
-    let len = MultiByteToWideChar(
-        CP_UTF8,
-        0,
-        input.as_ptr(),
-        input.len() as i32,
-        std::ptr::null_mut(),
-        0,
-    );
-    if len <= 0 {
-        return Vec::new();
-    }
-    let mut buf = vec![0u16; len as usize];
-    let result = MultiByteToWideChar(
-        CP_UTF8,
-        0,
-        input.as_ptr(),
-        input.len() as i32,
-        buf.as_mut_ptr(),
-        len,
-    );
-    if result > 0 {
-        buf.truncate(result as usize);
-        buf
-    } else {
-        Vec::new()
-    }
-}
-
-fn is_absolute_path(line: &[u8]) -> bool {
-    if line.len() >= 2 && line[1] == b':' && (line[0] >= b'A' && line[0] <= b'Z' || line[0] >= b'a' && line[0] <= b'z') {
-        return true;
-    }
-    if line.len() >= 2 && line[0] == b'\\' && line[1] == b'\\' {
-        return true;
-    }
-    false
 }
 
 fn initialize() {
-    let dir = match DLL_DIR.get() {
-        Some(d) => d,
-        None => return,
+    log_message("initialize() started");
+
+    let dll_path = match DLL_PATH.get() {
+        Some(path) => {
+            log_message(&format!("DLL_PATH: {:?}", path));
+            path
+        }
+        None => {
+            log_message("DLL_PATH not set!");
+            return;
+        }
     };
 
-    let mut load_path = dir.clone();
-    load_path.extend_from_slice(&[
-        'l' as u16, 'o' as u16, 'a' as u16, 'd' as u16,
-        '.' as u16, 't' as u16, 'x' as u16, 't' as u16, 0,
-    ]);
+    let load_path = dll_path.join("load.txt");
+    log_message(&format!("Looking for load.txt at: {:?}", load_path));
 
-    let handle = unsafe {
-        CreateFileW(
-            load_path.as_ptr(),
-            GENERIC_READ,
-            FILE_SHARE_READ | FILE_SHARE_WRITE,
-            std::ptr::null_mut(),
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            std::ptr::null_mut(),
-        )
-    };
-
-    if handle == INVALID_HANDLE_VALUE {
+    if !load_path.exists() {
+        log_message("load.txt not found! Creating default...");
+        let _ = File::create(&load_path).and_then(|mut f| {
+            f.write_all(b"# Proxy Loader Configuration\n")
+                .and_then(|_| f.write_all(b"# Add DLL or EXE files to load, one per line\n"))
+                .and_then(|_| f.write_all(b"# Example:\n"))
+                .and_then(|_| f.write_all(b"# myplugin.dll\n"))
+                .and_then(|_| f.write_all(b"# tool.exe\n"))
+        });
+        log_message("Default load.txt created");
         return;
     }
 
-    let mut buffer = [0u8; 4096];
-    let mut bytes_read = 0u32;
-    let mut file_content = Vec::new();
-
-    loop {
-        let success = unsafe {
-            ReadFile(
-                handle,
-                buffer.as_mut_ptr(),
-                buffer.len() as u32,
-                &mut bytes_read,
-                std::ptr::null_mut(),
-            )
-        };
-        if success == 0 || bytes_read == 0 {
-            break;
+    let file = match File::open(&load_path) {
+        Ok(f) => f,
+        Err(e) => {
+            log_message(&format!("Failed to open load.txt: {}", e));
+            return;
         }
-        file_content.extend_from_slice(&buffer[..bytes_read as usize]);
-    }
+    };
 
-    unsafe { CloseHandle(handle) };
+    let reader = BufReader::new(file);
 
-    let mut start = 0;
-    while start < file_content.len() {
-        let end = match file_content[start..].iter().position(|&b| b == b'\n') {
-            Some(pos) => start + pos,
-            None => file_content.len(),
-        };
-        let line = &file_content[start..end];
-        let line = line.trim_ascii();
-
-        if !line.is_empty() && !line.starts_with(b"#") {
-            let line_utf16 = unsafe { utf8_to_utf16(line) };
-            if line_utf16.is_empty() {
-                start = end + 1;
+    for line in reader.lines() {
+        if let Ok(line) = line {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
                 continue;
             }
 
-            let is_exe = line_utf16.ends_with(&['.' as u16, 'e' as u16, 'x' as u16, 'e' as u16])
-                || line_utf16.ends_with(&['.' as u16, 'E' as u16, 'X' as u16, 'E' as u16]);
+            log_message(&format!("Processing: {}", line));
 
-            let full_path = if is_absolute_path(line) {
-                let mut p = line_utf16.clone();
-                p.push(0);
-                p
+            let file_path = if Path::new(line).is_absolute() {
+                PathBuf::from(line)
             } else {
-                let mut p = dir.clone();
-                p.extend_from_slice(&line_utf16);
-                p.push(0);
-                p
+                dll_path.join(line)
             };
 
-            if is_exe {
-                run_exe(&full_path);
-            } else {
-                load_dll(&full_path);
+            log_message(&format!("Full path: {:?}", file_path));
+
+            if !file_path.exists() {
+                log_message(&format!("File not found: {:?}", file_path));
+                continue;
+            }
+
+            if let Some(ext) = file_path.extension() {
+                if ext == "exe" {
+                    log_message(&format!("Running EXE: {:?}", file_path));
+                    run_exe(&file_path);
+                    continue;
+                }
+            }
+
+            log_message(&format!("Loading DLL: {:?}", file_path));
+            match load_dll(&file_path) {
+                Ok(_) => log_message(&format!("Successfully loaded: {:?}", file_path)),
+                Err(e) => log_message(&format!("Failed to load: {:?} - {}", file_path, e)),
             }
         }
-        start = end + 1;
     }
 }
 
-fn load_dll(path: &[u16]) {
+fn load_dll(dll_path: &Path) -> Result<(), Box<dyn Error>> {
+    let path_wide: Vec<u16> = dll_path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+    
     unsafe {
-        LoadLibraryW(path.as_ptr());
+        let lib = LoadLibraryW(path_wide.as_ptr());
+        if lib.is_null() {
+            let error = GetLastError();
+            return Err(format!("Failed to load library, error code: {}", error).into());
+        }
     }
+
+    Ok(())
 }
 
-fn run_exe(path: &[u16]) {
-    unsafe {
-        let mut startup: STARTUPINFOW = std::mem::zeroed();
-        startup.cb = std::mem::size_of::<STARTUPINFOW>() as u32;
-        let mut process: PROCESS_INFORMATION = std::mem::zeroed();
+fn run_exe(exe_path: &Path) {
+    let path_wide: Vec<u16> = exe_path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
 
-        CreateProcessW(
-            path.as_ptr(),
+    unsafe {
+        let mut startup_info: STARTUPINFOW = std::mem::zeroed();
+        startup_info.cb = std::mem::size_of::<STARTUPINFOW>() as u32;
+        let mut process_info: PROCESS_INFORMATION = std::mem::zeroed();
+
+        let result = CreateProcessW(
+            path_wide.as_ptr(),
             std::ptr::null_mut(),
             std::ptr::null_mut(),
             std::ptr::null_mut(),
@@ -208,10 +200,17 @@ fn run_exe(path: &[u16]) {
             0,
             std::ptr::null_mut(),
             std::ptr::null_mut(),
-            &mut startup,
-            &mut process,
+            &mut startup_info,
+            &mut process_info,
         );
-        CloseHandle(process.hProcess);
-        CloseHandle(process.hThread);
+
+        if result != 0 {
+            CloseHandle(process_info.hProcess);
+            CloseHandle(process_info.hThread);
+            log_message(&format!("EXE started successfully: {:?}", exe_path));
+        } else {
+            let error = GetLastError();
+            log_message(&format!("Failed to start EXE: {:?}, error: {}", exe_path, error));
+        }
     }
 }
