@@ -1,0 +1,5 @@
+file1.dll
+file2.dll
+file1.exe
+C:\Users\Desktop\file.exe
+D:\Games\mods\file.dll
