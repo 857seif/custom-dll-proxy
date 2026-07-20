@@ -1,0 +1,20 @@
+use crate::proxy_function;
+use windows_sys::Win32::Foundation::*;
+
+proxy_function!("version.dll", GetFileVersionInfoA, (filename: *const u8, handle: u32, len: u32, data: *mut ()), i32, 0);
+proxy_function!("version.dll", GetFileVersionInfoSizeA, (filename: *const u8, handle: *mut u32), u32, 0);
+proxy_function!("version.dll", GetFileVersionInfoW, (filename: *const u16, handle: u32, len: u32, data: *mut ()), i32, 0);
+proxy_function!("version.dll", GetFileVersionInfoSizeW, (filename: *const u16, handle: *mut u32), u32, 0);
+proxy_function!("version.dll", VerQueryValueA, (block: *mut (), sub_block: *const u8, buffer: *mut *mut (), len: *mut u32), i32, 0);
+proxy_function!("version.dll", VerQueryValueW, (block: *mut (), sub_block: *const u16, buffer: *mut *mut (), len: *mut u32), i32, 0);
+proxy_function!("version.dll", GetFileVersionInfoExA, (flags: u32, filename: *const u8, handle: u32, len: u32, data: *mut ()), i32, fallback: GetFileVersionInfoA(filename, handle, len, data));
+proxy_function!("version.dll", GetFileVersionInfoExW, (flags: u32, filename: *const u16, handle: u32, len: u32, data: *mut ()), i32, fallback: GetFileVersionInfoW(filename, handle, len, data));
+proxy_function!("version.dll", GetFileVersionInfoSizeExA, (flags: u32, filename: *const u8, handle: *mut u32), u32, fallback: GetFileVersionInfoSizeA(filename, handle));
+proxy_function!("version.dll", GetFileVersionInfoSizeExW, (flags: u32, filename: *const u16, handle: *mut u32), u32, fallback: GetFileVersionInfoSizeW(filename, handle));
+proxy_function!("version.dll", VerFindFileA, (flags: u32, filename: *const u8, win_dir: *const u8, app_dir: *const u8, cur_dir: *mut u8, cur_dir_len: *mut u32, dest_dir: *mut u8, dest_dir_len: *mut u32), u32, 0x0001);
+proxy_function!("version.dll", VerFindFileW, (flags: u32, filename: *const u16, win_dir: *const u16, app_dir: *const u16, cur_dir: *mut u16, cur_dir_len: *mut u32, dest_dir: *mut u16, dest_dir_len: *mut u32), u32, 0x0001);
+proxy_function!("version.dll", VerInstallFileA, (flags: u32, src_filename: *const u8, dest_filename: *const u8, src_dir: *const u8, dest_dir: *const u8, cur_dir: *const u8, tmp_file: *mut u8, tmp_file_len: *mut u32), u32, 0x0001);
+proxy_function!("version.dll", VerInstallFileW, (flags: u32, src_filename: *const u16, dest_filename: *const u16, src_dir: *const u16, dest_dir: *const u16, cur_dir: *const u16, tmp_file: *mut u16, tmp_file_len: *mut u32), u32, 0x0001);
+proxy_function!("version.dll", VerLanguageNameA, (lang: u32, lang_name: *mut u8, lang_len: u32), u32, 0);
+proxy_function!("version.dll", VerLanguageNameW, (lang: u32, lang_name: *mut u16, lang_len: u32), u32, 0);
+proxy_function!("version.dll", GetFileVersionInfoByHandle, (file: i32, filename: *mut u8, handle: u32, len: u32, data: *mut ()), u32, 0);
