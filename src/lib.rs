@@ -1,6 +1,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use std::sync::OnceLock;
+use std::ffi::c_void;
 use windows_sys::Win32::Foundation::*;
 use windows_sys::Win32::System::LibraryLoader::*;
 use windows_sys::Win32::System::SystemServices::*;
@@ -50,7 +51,7 @@ extern "system" fn DllMain(module: HMODULE, reason: u32, _reserved: *mut ()) -> 
     }
 }
 
-unsafe extern "system" fn init_thread(_param: *mut ()) -> u32 {
+unsafe extern "system" fn init_thread(_param: *mut c_void) -> u32 {
     initialize();
     0
 }
@@ -117,7 +118,7 @@ fn initialize() {
             std::ptr::null_mut(),
             OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL,
-            0,
+            std::ptr::null_mut(),
         )
     };
 
