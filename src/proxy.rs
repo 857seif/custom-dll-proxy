@@ -59,7 +59,7 @@ pub unsafe fn get_proxied_func(dll_name: &str, func_name: &str) -> Option<unsafe
 #[macro_export]
 macro_rules! proxy_function {
     ($dll:literal, $name:ident, ($($param:ident: $param_type:ty),*), $ret_type:ty, $default:expr) => {
-        #[no_mangle]
+        #[unsafe(no_mangle)]
         pub unsafe extern "system" fn $name($($param: $param_type),*) -> $ret_type {
             type FuncType = unsafe extern "system" fn($($param_type),*) -> $ret_type;
             if let Some(func) = proxy::get_proxied_func($dll, stringify!($name)) {
@@ -71,7 +71,7 @@ macro_rules! proxy_function {
         }
     };
     ($dll:literal, $name:ident, ($($param:ident: $param_type:ty),*), $ret_type:ty, fallback: $fallback_fn:ident($($fallback_arg:ident),*)) => {
-        #[no_mangle]
+        #[unsafe(no_mangle)]
         pub unsafe extern "system" fn $name($($param: $param_type),*) -> $ret_type {
             type FuncType = unsafe extern "system" fn($($param_type),*) -> $ret_type;
             if let Some(func) = proxy::get_proxied_func($dll, stringify!($name)) {
@@ -82,4 +82,4 @@ macro_rules! proxy_function {
             }
         }
     };
-}
+                                                             }
