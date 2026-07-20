@@ -62,7 +62,7 @@ macro_rules! proxy_function {
         #[unsafe(no_mangle)]
         pub unsafe extern "system" fn $name($($param: $param_type),*) -> $ret_type {
             type FuncType = unsafe extern "system" fn($($param_type),*) -> $ret_type;
-            if let Some(func) = proxy::get_proxied_func($dll, stringify!($name)) {
+            if let Some(func) = crate::proxy::get_proxied_func($dll, stringify!($name)) {
                 let func: FuncType = std::mem::transmute(func);
                 func($($param),*)
             } else {
@@ -74,7 +74,7 @@ macro_rules! proxy_function {
         #[unsafe(no_mangle)]
         pub unsafe extern "system" fn $name($($param: $param_type),*) -> $ret_type {
             type FuncType = unsafe extern "system" fn($($param_type),*) -> $ret_type;
-            if let Some(func) = proxy::get_proxied_func($dll, stringify!($name)) {
+            if let Some(func) = crate::proxy::get_proxied_func($dll, stringify!($name)) {
                 let func: FuncType = std::mem::transmute(func);
                 func($($param),*)
             } else {
@@ -82,4 +82,4 @@ macro_rules! proxy_function {
             }
         }
     };
-                                                             }
+    }
