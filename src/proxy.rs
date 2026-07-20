@@ -84,4 +84,4 @@ macro_rules! proxy_function {
             }
         }
     };
-                               }
+    }
