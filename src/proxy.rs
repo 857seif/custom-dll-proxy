@@ -1,3 +1,5 @@
+#![allow(unsafe_op_in_unsafe_fn)]
+
 use std::ffi::CString;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{atomic::AtomicPtr, OnceLock};
@@ -82,4 +84,4 @@ macro_rules! proxy_function {
             }
         }
     };
-    }
+                               }
