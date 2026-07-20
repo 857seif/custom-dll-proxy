@@ -7,7 +7,6 @@ use windows_sys::Win32::System::LibraryLoader::*;
 use windows_sys::Win32::System::SystemServices::*;
 use windows_sys::Win32::System::Threading::*;
 use windows_sys::Win32::Storage::FileSystem::*;
-use windows_sys::Win32::UI::WindowsAndMessaging::*;
 use windows_sys::Win32::Globalization::*;
 
 pub mod proxy;
@@ -33,10 +32,10 @@ extern "system" fn DllMain(module: HMODULE, reason: u32, _reserved: *mut ()) -> 
             }
             unsafe {
                 CreateThread(
-                    std::ptr::null_mut(),
+                    std::ptr::null(),
                     0,
                     Some(init_thread),
-                    std::ptr::null_mut(),
+                    std::ptr::null(),
                     0,
                     std::ptr::null_mut(),
                 );
@@ -115,14 +114,14 @@ fn initialize() {
             load_path.as_ptr(),
             GENERIC_READ,
             FILE_SHARE_READ | FILE_SHARE_WRITE,
-            std::ptr::null_mut(),
+            std::ptr::null(),
             OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL,
-            std::ptr::null_mut(),
+            0,
         )
     };
 
-    if handle == INVALID_HANDLE_VALUE {
+    if handle == INVALID_HANDLE_VALUE || handle == 0 {
         return;
     }
 
@@ -203,16 +202,16 @@ fn run_exe(path: &[u16]) {
         CreateProcessW(
             path.as_ptr(),
             std::ptr::null_mut(),
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
+            std::ptr::null(),
+            std::ptr::null(),
             0,
             0,
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
+            std::ptr::null(),
+            std::ptr::null(),
             &mut startup,
             &mut process,
         );
         CloseHandle(process.hProcess);
         CloseHandle(process.hThread);
     }
-        }
+}
