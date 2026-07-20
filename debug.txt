@@ -1,0 +1,174 @@
+======================================================================
+DLL DEBUGGING SESSION
+======================================================================
+Start Time: 2026-07-20 19:07:09
+File: C:\Users\S\0000\11/version.dll
+======================================================================
+
+[1] PE FILE INFORMATION
+--------------------------------------------------
+  Machine: 34404
+  Number of Sections: 5
+  Time Date Stamp: 2026-07-20 18:48:15
+  Characteristics: 0x2022
+  Image Base: 0x180000000
+  Entry Point: 0x16150
+  Size of Image: 143360 bytes
+  Subsystem: 2
+  DLL Characteristics: 0x0160
+  File Size: 128,000 bytes
+
+[3] IMPORTED FUNCTIONS
+--------------------------------------------------
+  DLL: api-ms-win-core-synch-l1-2-0.dll
+    -> WakeByAddressSingle
+    -> WakeByAddressAll
+    -> WaitOnAddress
+
+  DLL: KERNEL32.dll
+    -> GetFullPathNameW
+    -> InitializeSListHead
+    -> GetSystemTimeAsFileTime
+    -> GetModuleFileNameW
+    -> FreeLibrary
+    -> CloseHandle
+    -> WaitForSingleObject
+    -> CreateProcessW
+    -> LoadLibraryW
+    -> GetLastError
+    -> GetSystemTimePreciseAsFileTime
+    -> GetSystemDirectoryA
+    -> LoadLibraryA
+    -> GetProcAddress
+    -> GetProcessHeap
+    -> HeapFree
+    -> HeapReAlloc
+    -> GetCurrentThreadId
+    -> SetLastError
+    -> GetEnvironmentVariableW
+    -> GetCurrentDirectoryW
+    -> RtlCaptureContext
+    -> GetCurrentProcess
+    -> RtlLookupFunctionEntry
+    -> WaitForSingleObjectEx
+    -> lstrlenW
+    -> GetCurrentProcessId
+    -> CreateMutexA
+    -> ReleaseMutex
+    -> WideCharToMultiByte
+    -> RtlVirtualUnwind
+    -> GetModuleHandleW
+    -> FormatMessageW
+    -> GetStdHandle
+    -> GetConsoleMode
+    -> GetConsoleOutputCP
+    -> MultiByteToWideChar
+    -> WriteConsoleW
+    -> HeapAlloc
+    -> FindFirstFileExW
+    -> FindClose
+    -> GetFileInformationByHandle
+    -> GetFileInformationByHandleEx
+    -> CreateFileW
+    -> SetFileTime
+    -> SetFileInformationByHandle
+    -> QueryPerformanceCounter
+
+  DLL: ntdll.dll
+    -> NtWriteFile
+    -> RtlNtStatusToDosError
+    -> NtReadFile
+
+  DLL: VCRUNTIME140.dll
+    -> __std_type_info_destroy_list
+    -> memcpy
+    -> memcmp
+    -> __CxxFrameHandler3
+    -> memset
+    -> __C_specific_handler
+
+  DLL: api-ms-win-crt-runtime-l1-1-0.dll
+    -> _initterm_e
+    -> _seh_filter_dll
+    -> _configure_narrow_argv
+    -> _initialize_narrow_environment
+    -> _initialize_onexit_table
+    -> _execute_onexit_table
+    -> _cexit
+    -> _initterm
+
+  Total Imports: 67
+
+[4] EXPORTED FUNCTIONS
+--------------------------------------------------
+  Export Count: 18
+  Number of Functions: 18
+
+  DllMain (Ordinal: 1, Address: 0x1000)
+  GetFileVersionInfoA (Ordinal: 2, Address: 0x2316)
+  GetFileVersionInfoByHandle (Ordinal: 3, Address: 0x2363)
+  GetFileVersionInfoExA (Ordinal: 4, Address: 0x23AD)
+  GetFileVersionInfoExW (Ordinal: 5, Address: 0x240F)
+  GetFileVersionInfoSizeA (Ordinal: 6, Address: 0x2471)
+  GetFileVersionInfoSizeExA (Ordinal: 7, Address: 0x24AB)
+  GetFileVersionInfoSizeExW (Ordinal: 8, Address: 0x24F4)
+  GetFileVersionInfoSizeW (Ordinal: 9, Address: 0x253D)
+  GetFileVersionInfoW (Ordinal: 10, Address: 0x2577)
+  VerFindFileA (Ordinal: 11, Address: 0x25C4)
+  VerFindFileW (Ordinal: 12, Address: 0x2611)
+  VerInstallFileA (Ordinal: 13, Address: 0x265E)
+  VerInstallFileW (Ordinal: 14, Address: 0x26AB)
+  VerLanguageNameA (Ordinal: 15, Address: 0x26F8)
+  VerLanguageNameW (Ordinal: 16, Address: 0x2739)
+  VerQueryValueA (Ordinal: 17, Address: 0x277A)
+  VerQueryValueW (Ordinal: 18, Address: 0x27C9)
+
+  Total Exports: 18
+
+[6] DLL LOAD ATTEMPT
+--------------------------------------------------
+  Loading DLL...
+  [SUCCESS] DLL loaded successfully!
+  Handle: <WinDLL 'C:\Users\S\0000\11\version.dll', handle 7ffcdca10000 at 0x1b60434ae90>
+
+[7] AVAILABLE FUNCTIONS
+--------------------------------------------------
+  No functions found
+  DLL is ready for use
+
+[2] SECTION INFORMATION
+--------------------------------------------------
+  Section: .text
+    Virtual Size: 91,768 bytes
+    Virtual Address: 0x1000
+    Size of Raw Data: 92,160 bytes
+    Pointer to Raw Data: 0x400
+    Characteristics: 0x60000020
+
+  Section: .rdata
+    Virtual Size: 29,730 bytes
+    Virtual Address: 0x18000
+    Size of Raw Data: 30,208 bytes
+    Pointer to Raw Data: 0x16C00
+    Characteristics: 0x40000040
+
+  Section: .data
+    Virtual Size: 560 bytes
+    Virtual Address: 0x20000
+    Size of Raw Data: 512 bytes
+    Pointer to Raw Data: 0x1E200
+    Characteristics: 0xC0000040
+
+  Section: .pdata
+    Virtual Size: 3,384 bytes
+    Virtual Address: 0x21000
+    Size of Raw Data: 3,584 bytes
+    Pointer to Raw Data: 0x1E400
+    Characteristics: 0x40000040
+
+  Section: .reloc
+    Virtual Size: 504 bytes
+    Virtual Address: 0x22000
+    Size of Raw Data: 512 bytes
+    Pointer to Raw Data: 0x1F200
+    Characteristics: 0x42000040
