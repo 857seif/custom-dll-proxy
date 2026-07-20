@@ -1,0 +1,26 @@
+[package]
+name = "proxy"
+version = "1.0.0"
+edition = "2024"
+
+[lib]
+name = "version"
+crate-type = ["cdylib"]
+
+[dependencies]
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_System_LibraryLoader",
+    "Win32_System_SystemServices",
+    "Win32_System_Threading",
+    "Win32_Storage_FileSystem",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_Globalization",
+] }
+
+[profile.release]
+lto = true
+strip = true
+opt-level = "z"
+codegen-units = 1
+panic = "abort"
